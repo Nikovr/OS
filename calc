@@ -1,9 +1,0 @@
-#!/bin/bash
-
-calc() {
-	if [ "$1" == "sum" ]; then
-		echo "$2" + "$3"
-	fi
-	
-}
-calc
