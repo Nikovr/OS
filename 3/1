@@ -1,0 +1,11 @@
+#!/bin/bash
+execution_date=$(date)
+
+mkdir ~/test &> /dev/null &&
+{
+echo "catalog test was created succesfully" >> ~/report
+touch ~/test/"$execution_date"
+}
+
+ping www.net_nikogo.ru &> /dev/null || echo "$(date) error: host is unavailable" >> ~/report
+

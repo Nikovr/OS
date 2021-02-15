@@ -1,0 +1,42 @@
+#!/bin/bash
+echo $$ > .pid
+
+var=1
+mode="not set"
+
+usr1()
+{
+	mode="+"
+}
+
+usr2()
+{
+	mode="*"
+}
+
+sigterm()
+{
+	mode="stop"
+}
+
+trap 'usr1' USR1
+trap 'usr2' USR2
+trap 'sigterm' SIGTERM
+
+while true
+do
+	case "$mode" in
+		"+")
+			var=$((var+2))
+			;;
+		"*")
+			var=$((var*2))
+			;;
+		"stop")
+			echo "process was terminated by SIGTERM"
+			exit
+			;;
+	esac
+	sleep 1
+	echo $var
+done

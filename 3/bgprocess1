@@ -1,0 +1,5 @@
+#!/bin/bash
+
+while true; do
+	a=(33*19)
+done

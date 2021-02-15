@@ -1,0 +1,47 @@
+#!/bin/bash
+
+var=1
+mode="+"
+
+(tail -f pipe) |
+while true
+do
+	read LINE
+	case "$LINE" in
+		"QUIT")
+			echo "exit"
+			kill $(pgrep 5gen)
+			killall tail
+			exit
+			;;
+		"+")
+			mode="+"
+			;;
+		"*")
+			mode="*"
+			;;
+		*)
+			if [[ $LINE =~ ^[0-9]+$ ]]
+			then
+				case $mode in
+					"+")
+						echo $var+$LINE
+						var=$((var+LINE))
+						echo =$var
+						;;
+
+					"*")
+						echo "$var*$LINE"
+						var=$((var*LINE))
+						echo =$var
+						;;
+				esac
+			else
+				echo "error: bad input"
+				kill $(pgrep 5gen)
+				killall tail
+				exit
+			fi
+			;;
+	esac
+done

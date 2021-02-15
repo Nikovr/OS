@@ -1,0 +1,29 @@
+#!/bin/bash
+
+top -o %CPU -bn 1 -w 512 | sed -n 8,10p | sort -nk 1 > ./tmp
+proc1=$(cat ./tmp | sed -n 1p | awk '{print $12}')
+rm ./tmp
+
+n=1
+while :
+do
+	if ! ps -p $(pgrep $proc1) &> /dev/null
+	then
+		break
+	fi
+
+	if [ $n -gt 19 ]
+	then
+		break
+	fi
+
+	cpu=$(top -bn 1 -w 512 -p $(pgrep $proc1) | sed -n 8p | awk '{print $9}')
+	cpu=${cpu%.*}
+	if [ $cpu -gt 10 ]
+	then
+		renice -n $n -p $(pgrep $proc1) > /dev/null
+		n=$((n+1))
+		sleep 5
+	fi
+done
+
