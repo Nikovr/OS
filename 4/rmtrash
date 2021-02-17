@@ -1,0 +1,47 @@
+#!/bin/bash
+
+if [ -z "$1" ]
+then
+	echo "error: this script requires an argument"
+	echo "try: ./rmtrash filename"
+	exit
+fi
+
+if ! [ -z "$2" ]
+then
+	echo "error: this script requires only one argument"
+	exit
+fi
+
+if [[ "$1" == *"/"* ]]
+then
+	echo "error: $1 is not a file name"
+	exit
+fi
+
+filename="$1"
+file_path=$(pwd)
+file="$file_path/$filename"
+
+if ! [ -f "$file" ]
+then
+	echo "error: file $file doesn't exist"
+	exit
+fi
+
+mkdir ~/.trash &> /dev/null
+cd ~/.trash
+
+linkname="$(date)"
+ln $file "$linkname" &> /dev/null ||
+{
+echo "error: could not create a link"
+exit
+}
+rm $file &> /dev/null ||
+{
+echo "error: failed attempt at deleting $file. Check your permissions."
+exit
+}
+
+echo "$file=======$linkname" >> ~/.trash.log

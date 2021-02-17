@@ -1,0 +1,123 @@
+#!/bin/bash
+
+if ! [ -d ~/.trash ]
+then
+	echo "error: trash directory doesn't exist"
+	exit
+fi
+
+if ! [ -f ~/.trash.log ]
+then
+	echo "error: trash.log doesn't exist"
+	exit
+fi
+
+if ! [[ -w ~/.trash.log && -r ~/.trash.log ]]
+then
+	echo "error: you don't have access to trash.log"
+	exit
+fi
+
+if [ -z "$1" ]
+then
+	echo "error: this script requires an argument"
+	echo "try: ./untrash filename"
+	exit
+fi
+
+if ! [ -z "$2" ]
+then
+	echo "error: this script requires only one argument"
+	exit
+fi
+
+if [[ "$1" == *"/"* ]]
+then
+	echo "error: $1 is not a file name"
+	exit
+fi
+
+IFS=$'\n'
+filename="$1"
+
+count_lines=0
+match_check=0
+for line in $(cat ~/.trash.log)
+do
+	count_lines=$((count_lines+1))
+	file="$(echo $line | awk 'BEGIN { FS = "=======" } ; {print $1}')"
+	if [[ "${file##*/}" == "$filename" ]]
+	then
+		match_check=1
+		while true
+		do
+			echo "$file"
+			echo "Restore this file? Y - Yes  N - No"
+			read "YN"
+			case "$YN" in
+				"N")
+					break
+					;;
+				"Y")
+					path="${file%/*}"
+					if ! [ -d "$path" ]
+					then
+						echo "Warning: $path path doesn't exist anymore."
+						echo "File will be restored to your home directory instead."
+						path="/home/user"
+					fi
+
+					while [ -f "$path/$filename" ]
+					do
+						echo "Warning: $path/$filename already exists"
+						echo "Would you like to rename your file? Y - Yes  N - No (No cancels the restoration)"
+						read YN2
+						case "$YN2" in
+							"N")
+								exit
+								;;
+							"Y")
+								echo "Enter a new name for your file:"
+								read new_filename
+								if [[ "$new_filename" == *"/"* ]]
+								then
+									echo "error: $new_filename is not a file name"
+									continue
+								fi
+								if [ -z "$new_filename" ]
+								then
+									echo "error: a file name can't be empty"
+									continue
+								fi
+
+								filename=$new_filename
+								;;
+						esac
+					done
+
+					newfile="$path/$filename"
+					link="$(echo $line | awk 'BEGIN { FS = "=======" } ; {print $2}')"
+
+					ln ~/.trash/"$link" "$newfile" &> /dev/null ||
+					{
+					echo "error: could not access file in trash"
+					exit
+					}
+
+					rm ~/.trash/"$link"
+					sed "${count_lines}d" ~/.trash.log > ~/.trash2.log && mv ~/.trash2.log ~/.trash.log
+
+					echo "$newfile succesfully restored!"
+					exit
+					;;
+			esac
+		done
+	fi
+done
+
+if [[ $match_check == 0 ]]
+then
+	echo "error: no files under name $filename in trash"
+	exit
+fi
+
